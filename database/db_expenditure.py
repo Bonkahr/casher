@@ -12,8 +12,7 @@ from schema.schemas import ExpenditureBase
 from .models import Expenditure, User
 
 
-def create_expenditure(request: ExpenditureBase, db: Session,
-                       current_user_id: int):
+def correct_expenditure(request: ExpenditureBase):
     money_type = ['credit', 'expense']
 
     if request.money_type not in money_type:
@@ -58,6 +57,13 @@ def create_expenditure(request: ExpenditureBase, db: Session,
 
     paid_on = f'{paid_on[0]}-{paid_on[1]}-{paid_on[2]}'
 
+    return money_type, paid_on
+
+
+def create_expenditure(request: ExpenditureBase, db: Session,
+                       current_user_id: int):
+    money_type, paid_on = correct_expenditure(request)
+
     new_expenditure = Expenditure(
         money_type=money_type,
         amount=request.amount,
@@ -78,7 +84,6 @@ def create_expenditure(request: ExpenditureBase, db: Session,
         db.refresh(new_expenditure)
         return new_expenditure
     except Exception as e:
-        print(e)
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Error saving your data to the database. Try again later."
@@ -105,6 +110,40 @@ def delete_expenditure(expend_id: int, db: Session, current_user_id: int):
     else:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail=f'No expenditure with id {expend_id}.')
+
+
+def edit_expenditure(request: ExpenditureBase, expend_id: int,
+                     db: Session, current_user_id: int):
+    expenditure = db.query(Expenditure).filter(Expenditure.id ==
+                                               expend_id).first()
+
+    if not expenditure:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail=f'No expenditure with id {expend_id}.')
+
+    if not expenditure.user_id == current_user_id:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+                            detail=f'You are not authorized to edit this '
+                                   f'expenditure.')
+
+    money_type, paid_on = correct_expenditure(request)
+
+    expenditure.money_type = money_type
+    expenditure.paid_on = paid_on
+    expenditure.amount = request.amount
+    expenditure.description = request.description
+    expenditure.time_stamp = datetime.datetime.now()
+
+    try:
+        db.add(expenditure)
+        db.commit()
+        db.refresh(expenditure)
+        return expenditure
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Error saving your data to the database. Try again later."
+        )
 
 
 def expenditures_to_pdf(db: Session, current_user_id: int, response: Response):

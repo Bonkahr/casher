@@ -40,7 +40,6 @@ class ExpenditureBase(BaseModel):
     amount: float
     paid_on: str
     description: str
-    time_stamp: datetime
 
 
 class ExpenditureDisplay(BaseModel):

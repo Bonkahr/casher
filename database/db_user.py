@@ -219,6 +219,12 @@ def edit_user_password(request: UserEditPassword, username: str, db: Session,
 
     if user:
 
+        if user.id != current_user_id:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail='You can only modify your password.'
+            )
+
         if verify(user.password, request.new_password):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,

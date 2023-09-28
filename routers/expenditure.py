@@ -37,7 +37,7 @@ async def user_expenditures(db: Session = Depends(get_db),
     return db_expenditure.user_expenditures(db, current_user.id)
 
 
-@router.delete('/{expend_id}')
+@router.delete('/delete/{expend_id}')
 async def delete_expenditure(expend_id: int, db: Session = Depends(get_db),
                              current_user: UserAuth =
                              Depends(get_current_user)):
@@ -50,6 +50,24 @@ async def delete_expenditure(expend_id: int, db: Session = Depends(get_db),
     """
 
     return db_expenditure.delete_expenditure(expend_id, db, current_user.id)
+
+
+@router.put('/edit/{expend_id}')
+async def edit_expenditure(request: ExpenditureBase, expend_id: int,
+                           db: Session = Depends(get_db),
+                           current_user: UserAuth =
+                           Depends(get_current_user)):
+    """
+
+    :param request:
+    :param expend_id:
+    :param db:
+    :param current_user:
+    :return:
+    """
+
+    return db_expenditure.edit_expenditure(request, expend_id, db,
+                                           current_user.id)
 
 
 @router.get('/statement')

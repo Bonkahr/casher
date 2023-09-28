@@ -64,9 +64,9 @@ async def edit_user_type(request: UserEditUserType, username: str,
 
 
 @router.put('/edit_password/{username}', response_model=UserDisplay)
-async def edit_user_type(request: UserEditPassword, username: str,
-                         db: Session = Depends(get_db),
-                         current_user: UserAuth = Depends(get_current_user)):
+async def change_password(request: UserEditPassword, username: str,
+                          db: Session = Depends(get_db),
+                          current_user: UserAuth = Depends(get_current_user)):
     return db_user.edit_user_password(request, username, db, current_user.id)
 
 
