@@ -14,15 +14,25 @@ class UserBase(BaseModel):
     created_on: datetime
 
 
+class UserEditPassword(BaseModel):
+    old_password: str
+    new_password: str
+
+
+class UserEditUserType(BaseModel):
+    user_type: str
+
+
 class UserDisplay(BaseModel):
     first_name: str
     last_name: str
     user_type: str
+    username: str
     created_on: datetime
 
     class Config:
-        # orm_mode = True
-        from_attributes = True
+        orm_mode = True
+        # from_attributes = True
 
 
 class ExpenditureBase(BaseModel):
@@ -42,12 +52,11 @@ class ExpenditureDisplay(BaseModel):
     time_stamp: datetime
 
     class Config:
-        from_attributes = True
-        # orm_mode = True
+        # from_attributes = True
+        orm_mode = True
 
 
 class UserAuth(BaseModel):
     id: int
     username: str
     email: EmailStr
-

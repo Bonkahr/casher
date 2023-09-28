@@ -1,8 +1,16 @@
-image_name = 'hello.hsjs.jpg'
-current_user = 'bgakingo'
+from passlib.context import CryptContext
 
-file_ext = image_name.rsplit('.', 1)[-1]
+pwd_context = CryptContext(schemes=['bcrypt'], deprecated='auto')
 
-path = f'images/{current_user}.{file_ext}'
 
-print(path)
+def bcrypt(password: str):
+    return pwd_context.hash(password)
+
+
+def verify(hashed_password, plain_password):
+    return pwd_context.verify(plain_password, hashed_password)
+
+
+password = bcrypt('hello there')
+
+print(verify(password, 'hello there'))

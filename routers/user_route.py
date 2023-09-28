@@ -6,7 +6,8 @@ from sqlalchemy.orm.session import Session
 from auth.outh2 import get_current_user
 from database import db_user
 from database.database import get_db
-from schema.schemas import UserBase, UserDisplay, UserAuth
+from schema.schemas import (UserBase, UserDisplay, UserAuth, UserEditUserType,
+                            UserEditPassword)
 
 router = APIRouter(prefix='/user', tags=['Users'])
 
@@ -35,6 +36,13 @@ async def all_users(db: Session = Depends(get_db),
     return db_user.get_all_users(db, current_user.id)
 
 
+@router.get('/{username}', response_model=UserDisplay)
+async def get_user_username(username: str,
+                            db: Session = Depends(get_db),
+                            current_user: UserAuth = Depends(get_current_user)):
+    return db_user.retrieve_user_by_username(username, db, current_user.id)
+
+
 @router.delete('/{user_id}')
 async def delete_user(user_id: int, db: Session = Depends(get_db),
                       current_user: UserAuth = Depends(get_current_user)):
@@ -46,6 +54,26 @@ async def delete_user(user_id: int, db: Session = Depends(get_db),
     :return:
     """
     return db_user.delete_user(user_id, db, current_user.id)
+
+
+@router.put('/edit_user/{username}', response_model=UserDisplay)
+async def edit_user_type(request: UserEditUserType, username: str,
+                         db: Session = Depends(get_db),
+                         current_user: UserAuth = Depends(get_current_user)):
+    return db_user.edit_user_type(request, username, db, current_user.id)
+
+
+@router.put('/edit_password/{username}', response_model=UserDisplay)
+async def edit_user_type(request: UserEditPassword, username: str,
+                         db: Session = Depends(get_db),
+                         current_user: UserAuth = Depends(get_current_user)):
+    return db_user.edit_user_password(request, username, db, current_user.id)
+
+
+@router.put('/reset_password/{username}', response_model=UserDisplay)
+async def reset_password(username: str, db: Session = Depends(get_db),
+                         current_user: UserAuth = Depends(get_current_user)):
+    return db_user.reset_password(username, db, current_user.id)
 
 
 @router.post('/image')
@@ -84,4 +112,3 @@ async def upload_image(image: UploadFile = File(...),
         shutil.copyfileobj(image.file, buffer)
 
     return {'file_name': path}
-
