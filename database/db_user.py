@@ -148,7 +148,7 @@ def get_user_by_username(username: str, db: Session):
 
 def retrieve_user_by_username(username: str, db: Session, current_user_id: int):
     """Get a user from the database using the username
-    Used for authentication.
+    Used for editing user functionalities
     Args:
         username (str): user username
         db (Session): the database
