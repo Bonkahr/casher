@@ -30,4 +30,3 @@ class Expenditure(Base):
     user_id = Column(Integer, ForeignKey('user.id'))
     user = relationship('User', back_populates='expenditures')
     time_stamp = Column(DateTime)
-

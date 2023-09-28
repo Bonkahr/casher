@@ -38,6 +38,7 @@ class ExpenditureDisplay(BaseModel):
     amount: float
     paid_on: str
     description: str
+    id: int
     time_stamp: datetime
 
     class Config:

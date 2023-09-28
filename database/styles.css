@@ -1,0 +1,20 @@
+.my_style {
+    font-size: 11pt;
+    font-family: Arial;
+    border-collapse: collapse;
+    border: 1px solid silver;
+
+}
+
+.my_style td, th {
+    padding: 5px;
+}
+
+.my_style tr:nth-child(even) {
+    background: #E0E0E0;
+}
+
+.my_style tr:hover {
+    background: silver;
+    cursor: pointer;
+}

@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Response
 from sqlalchemy.orm.session import Session
 
 from auth.outh2 import get_current_user
@@ -25,13 +25,34 @@ async def create_expenditure(request: ExpenditureBase,
 
 
 @router.get('', response_model=list[ExpenditureDisplay])
-async def get_all_expenditures(db: Session = Depends(get_db),
-                               current_user: UserAuth = Depends(
-                                   get_current_user)):
+async def user_expenditures(db: Session = Depends(get_db),
+                            current_user: UserAuth = Depends(
+                                get_current_user)):
     """
 
     :param db:
     :param current_user:
     :return:
     """
-    return db_expenditure.get_all_expenditures(db, current_user.id)
+    return db_expenditure.user_expenditures(db, current_user.id)
+
+
+@router.delete('/{expend_id}')
+async def delete_expenditure(expend_id: int, db: Session = Depends(get_db),
+                             current_user: UserAuth =
+                             Depends(get_current_user)):
+    """
+
+    :param expend_id:
+    :param db:
+    :param current_user:
+    :return:
+    """
+
+    return db_expenditure.delete_expenditure(expend_id, db, current_user.id)
+
+
+@router.get('/statement')
+async def get_statement(response: Response, db: Session = Depends(get_db),
+                        current_user: UserAuth = Depends(get_current_user)):
+    return db_expenditure.expenditures_to_pdf(db, current_user.id, response)

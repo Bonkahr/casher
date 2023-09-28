@@ -21,7 +21,7 @@ async def create_user(request: UserBase, db: Session = Depends(get_db)):
     return db_user.create_user(request, db)
 
 
-@router.get('/', response_model=list[UserDisplay])
+@router.get('', response_model=list[UserDisplay])
 async def all_users(db: Session = Depends(get_db),
                     current_user: UserAuth = Depends(get_current_user)):
     """
