@@ -249,23 +249,27 @@ def expenditures_to_pdf(db: Session, current_user_id: int, response: Response):
       </body>
     </html>
     """
-    # saving the file as pdf.
-    # HTML(string=html_string).write_pdf(f'{user.username}.pdf')
+    # TODO: Create the functionality to download the file to users computer
+    #  instead of saving it in the server.
+    #  The commented code below results to an error about UTF-8 formatting.
 
     # storing the pdf as BytesIO object
-    pdf_buffer = BytesIO()
-    HTML(string=html_string).write_pdf(pdf_buffer)
+    # pdf_buffer = BytesIO()
+    # HTML(string=html_string).write_pdf(pdf_buffer)
 
-    # Set the Content-Disposition header to prompt the user to download the
-    # file
-    response.headers["Content-Disposition"] = f"attachment: filename" \
-                                              f"={user.username}.pdf"
+    # # Setting the Content-Disposition header
+    # # to prompt the user to download the file.
+    # response.headers["Content-Disposition"] = f"attachment: filename" \
+    #                                           f"={user.username}.pdf"
+    #
+    # # Setting the Content-Type header to indicate that it's a PDF file
+    # response.headers["Content-Type"] = "application/pdf"
+    #
+    # # Seeking to the beginning of the BytesIO buffer
+    # pdf_buffer.seek(0)
+    #
+    # # Return the PDF as a downloadable file
+    # return pdf_buffer.read()
 
-    # Setting the Content-Type header to indicate that it's a PDF file
-    response.headers["Content-Type"] = "application/pdf"
-
-    # Seek to the beginning of the BytesIO buffer
-    pdf_buffer.seek(0)
-
-    # Return the PDF as a downloadable file
-    return pdf_buffer.read()
+    # # saving the file as pdf.
+    HTML(string=html_string).write_pdf(f'{user.username}.pdf')
