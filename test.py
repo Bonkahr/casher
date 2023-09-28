@@ -1,11 +1,8 @@
-name = ''
-name_2 = 'Daniel'
+image_name = 'hello.hsjs.jpg'
+current_user = 'bgakingo'
 
-name_m = name_2 if not name else name
-print(name_m)
+file_ext = image_name.rsplit('.', 1)[-1]
 
-f = f"""
-{{name}} is {name_2} 
-"""
+path = f'images/{current_user}.{file_ext}'
 
-print(f)
+print(path)

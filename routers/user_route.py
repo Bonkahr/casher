@@ -1,4 +1,6 @@
-from fastapi import APIRouter, Depends
+import shutil
+
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.orm.session import Session
 
 from auth.outh2 import get_current_user
@@ -44,3 +46,42 @@ async def delete_user(user_id: int, db: Session = Depends(get_db),
     :return:
     """
     return db_user.delete_user(user_id, db, current_user.id)
+
+
+@router.post('/image')
+async def upload_image(image: UploadFile = File(...),
+                       current_user: UserAuth = Depends(get_current_user)):
+    """Uploads an image to the server
+
+    Args:
+        image (UploadFile, optional): the image file.
+        Default to File(...).
+        Current_user (UserAuth, optional): logged user.
+        Defaults Depend on(get_current_user).
+
+    Raises:
+        HTTPException: image file not supported
+
+    Returns:
+        str: file name saved in server
+        :param image:
+        :param current_user:
+    """
+
+    image_file_type = image.filename.rsplit('.', 1)[1]
+    allowed_image_types = {"jpg", "png", "jpeg", "webm", "gif"}
+
+    if image_file_type not in allowed_image_types:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                            detail=f'Image format not supported, supported '
+                                   f'formats are {", ".join(allowed_image_types)}.')
+
+    file_ext = image.filename.rsplit('.', 1)[-1]
+
+    path = f'images/{current_user.username}.{file_ext}'
+
+    with open(path, 'w+b') as buffer:
+        shutil.copyfileobj(image.file, buffer)
+
+    return {'file_name': path}
+
