@@ -10,9 +10,9 @@ from database import db_user
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="login")
 
-SECRET_KEY = '9ef9f676ce7104c5f142f6b336b15de72a0e178e5c2e60e489418d451ef557a8'
-ALGORITHM = 'HS256'
-ACCESS_TOKEN_EXPIRE_MINUTES = 30
+SECRET_KEY = "9ef9f676ce7104c5f142f6b336b15de72a0e178e5c2e60e489418d451ef557a8"
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 600
 
 
 def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
@@ -26,8 +26,9 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
     return encoded_jwt
 
 
-def get_current_user(token: str = Depends(oauth2_scheme),
-                     db: Session = Depends(get_db)):
+def get_current_user(
+    token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)
+):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",

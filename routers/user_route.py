@@ -12,7 +12,7 @@ from schema.schemas import (UserBase, UserDisplay, UserAuth, UserEditUserType,
 router = APIRouter(prefix='/user', tags=['Users'])
 
 
-@router.post('', response_model=UserDisplay)
+@router.post('/new', response_model=UserDisplay)
 async def create_user(request: UserBase, db: Session = Depends(get_db)):
     """
 
@@ -77,8 +77,8 @@ async def reset_password(username: str, db: Session = Depends(get_db),
 
 
 @router.post('/image')
-async def upload_image(image: UploadFile = File(...),
-                       current_user: UserAuth = Depends(get_current_user)):
+async def upload_image(image: UploadFile = File(...)):#,
+                      # current_user: UserAuth = Depends(get_current_user)):
     """Uploads an image to the server
 
     Args:
@@ -104,9 +104,9 @@ async def upload_image(image: UploadFile = File(...),
                             detail=f'Image format not supported, supported '
                                    f'formats are {", ".join(allowed_image_types)}.')
 
-    file_ext = image.filename.rsplit('.', 1)[-1]
+    filename = image.filename.rsplit('.', 1)
 
-    path = f'images/{current_user.username}.{file_ext}'
+    path = f'images/{filename[0]}.{filename[-1]}'
 
     with open(path, 'w+b') as buffer:
         shutil.copyfileobj(image.file, buffer)

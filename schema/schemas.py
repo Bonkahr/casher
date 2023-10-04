@@ -11,7 +11,6 @@ class UserBase(BaseModel):
     password: str
     user_image_url: str
     user_type: str
-    created_on: datetime
 
 
 class UserEditPassword(BaseModel):
@@ -28,6 +27,7 @@ class UserDisplay(BaseModel):
     last_name: str
     user_type: str
     username: str
+    user_image_url: str
     created_on: datetime
 
     class Config:
@@ -53,6 +53,14 @@ class ExpenditureDisplay(BaseModel):
     class Config:
         # from_attributes = True
         orm_mode = True
+
+
+class TransactionBase(BaseModel):
+    total_transaction: float
+    total_expenses: float
+    total_credits: float
+    money_at_hand: float
+
 
 
 class UserAuth(BaseModel):

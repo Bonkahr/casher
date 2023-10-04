@@ -1,19 +1,26 @@
 from fastapi import APIRouter, Depends, Response
 from sqlalchemy.orm.session import Session
 
+from database.models import Expenditure
 from auth.outh2 import get_current_user
 from database import db_expenditure
 from database.database import get_db
-from schema.schemas import ExpenditureBase, ExpenditureDisplay, UserAuth
+from schema.schemas import (
+    ExpenditureBase,
+    ExpenditureDisplay,
+    UserAuth,
+    TransactionBase,
+)
 
-router = APIRouter(prefix='/expenditure', tags=['Expenditures'])
+router = APIRouter(prefix="/expenditure", tags=["Expenditures"])
 
 
-@router.post('', response_model=ExpenditureDisplay)
-async def create_expenditure(request: ExpenditureBase,
-                             db: Session = Depends(get_db),
-                             current_user: UserAuth = Depends(
-                                 get_current_user)):
+@router.post("", response_model=ExpenditureDisplay)
+async def create_expenditure(
+    request: ExpenditureBase,
+    db: Session = Depends(get_db),
+    current_user: UserAuth = Depends(get_current_user),
+):
     """
 
     :param request:
@@ -24,10 +31,10 @@ async def create_expenditure(request: ExpenditureBase,
     return db_expenditure.create_expenditure(request, db, current_user.id)
 
 
-@router.get('', response_model=list[ExpenditureDisplay])
-async def user_expenditures(db: Session = Depends(get_db),
-                            current_user: UserAuth = Depends(
-                                get_current_user)):
+@router.get("", response_model=list[ExpenditureDisplay])
+async def user_expenditures(
+    db: Session = Depends(get_db), current_user: UserAuth = Depends(get_current_user)
+):
     """
 
     :param db:
@@ -36,11 +43,37 @@ async def user_expenditures(db: Session = Depends(get_db),
     """
     return db_expenditure.user_expenditures(db, current_user.id)
 
+@router.get('/transactions')
+async def transactions(
+    db: Session = Depends(get_db), current_user: UserAuth = Depends(get_current_user)):
 
-@router.delete('/delete/{expend_id}')
-async def delete_expenditure(expend_id: int, db: Session = Depends(get_db),
-                             current_user: UserAuth =
-                             Depends(get_current_user)):
+    expenditures = db.query(Expenditure).filter(Expenditure.user_id == current_user.id).all()
+
+    credits = []
+    expenses = []
+
+    for expend in expenditures:
+        if expend.money_type == 'credit':
+            credits.append(expend.amount)
+        else:
+            expenses.append(expend.amount)
+    
+    transactions = TransactionBase(
+        total_credits=sum(credits),
+        total_expenses=sum(expenses),
+        total_transaction=sum(credits) + sum(expenses),
+        money_at_hand=sum(credits) - sum(expenses)
+    )
+    return transactions
+    
+
+
+@router.delete("/delete/{expend_id}")
+async def delete_expenditure(
+    expend_id: int,
+    db: Session = Depends(get_db),
+    current_user: UserAuth = Depends(get_current_user),
+):
     """
 
     :param expend_id:
@@ -52,11 +85,13 @@ async def delete_expenditure(expend_id: int, db: Session = Depends(get_db),
     return db_expenditure.delete_expenditure(expend_id, db, current_user.id)
 
 
-@router.put('/edit/{expend_id}')
-async def edit_expenditure(request: ExpenditureBase, expend_id: int,
-                           db: Session = Depends(get_db),
-                           current_user: UserAuth =
-                           Depends(get_current_user)):
+@router.put("/edit/{expend_id}")
+async def edit_expenditure(
+    request: ExpenditureBase,
+    expend_id: int,
+    db: Session = Depends(get_db),
+    current_user: UserAuth = Depends(get_current_user),
+):
     """
 
     :param request:
@@ -66,11 +101,13 @@ async def edit_expenditure(request: ExpenditureBase, expend_id: int,
     :return:
     """
 
-    return db_expenditure.edit_expenditure(request, expend_id, db,
-                                           current_user.id)
+    return db_expenditure.edit_expenditure(request, expend_id, db, current_user.id)
 
 
-@router.get('/statement')
-async def get_statement(response: Response, db: Session = Depends(get_db),
-                        current_user: UserAuth = Depends(get_current_user)):
+@router.get("/statement")
+async def get_statement(
+    response: Response,
+    db: Session = Depends(get_db),
+    current_user: UserAuth = Depends(get_current_user),
+):
     return db_expenditure.expenditures_to_pdf(db, current_user.id, response)

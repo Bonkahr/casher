@@ -13,20 +13,20 @@ from .models import Expenditure, User
 
 
 def correct_expenditure(request: ExpenditureBase):
-    money_type = ['credit', 'expense']
+    money_type = ["credit", "expense"]
 
-    if request.money_type not in money_type:
+    if request.money_type.lower() not in money_type:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail=f'Type must either be credit or expense.'
+            detail=f"Type must either be credit or expense.",
         )
     money_type = request.money_type.lower()
 
-    paid_on = request.paid_on.split('-')
+    paid_on = request.paid_on.split("-")
     if len(paid_on) != 3:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail='Enter the date as YYYY-MM-DD.'
+            detail="Enter the date as YYYY-MM-DD.",
         )
 
     for d in paid_on:
@@ -34,34 +34,29 @@ def correct_expenditure(request: ExpenditureBase):
             int(d)
         except Exception as e:
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail='Invalid dates.'
+                status_code=status.HTTP_403_FORBIDDEN, detail="Invalid dates."
             )
 
     if 2022 > int(paid_on[0]) > 2023:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=f'Invalid calendar year.'
+            status_code=status.HTTP_403_FORBIDDEN, detail=f"Invalid calendar year."
         )
     if 1 > int(paid_on[1]) > 12:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=f'Invalid calendar Month.'
+            status_code=status.HTTP_403_FORBIDDEN, detail=f"Invalid calendar Month."
         )
 
     if 1 > int(paid_on[2]) > 31:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail=f'Invalid calendar Month.'
+            status_code=status.HTTP_403_FORBIDDEN, detail=f"Invalid calendar Month."
         )
 
-    paid_on = f'{paid_on[0]}-{paid_on[1]}-{paid_on[2]}'
+    paid_on = f"{paid_on[0]}-{paid_on[1]}-{paid_on[2]}"
 
     return money_type, paid_on
 
 
-def create_expenditure(request: ExpenditureBase, db: Session,
-                       current_user_id: int):
+def create_expenditure(request: ExpenditureBase, db: Session, current_user_id: int):
     money_type, paid_on = correct_expenditure(request)
 
     new_expenditure = Expenditure(
@@ -70,13 +65,15 @@ def create_expenditure(request: ExpenditureBase, db: Session,
         paid_on=paid_on,
         description=request.description,
         user_id=current_user_id,
-        time_stamp=datetime.datetime.now()
+        time_stamp=datetime.datetime.now(),
     )
 
-    print(f"money_type{new_expenditure.money_type}, amount: "
-          f"{new_expenditure.amount}, paid_on {new_expenditure.paid_on}, "
-          f"descr{new_expenditure.description}, user_id"
-          f"{new_expenditure.user_id}, time_st{new_expenditure.time_stamp}")
+    print(
+        f"money_type{new_expenditure.money_type}, amount: "
+        f"{new_expenditure.amount}, paid_on {new_expenditure.paid_on}, "
+        f"descr{new_expenditure.description}, user_id"
+        f"{new_expenditure.user_id}, time_st{new_expenditure.time_stamp}"
+    )
 
     try:
         db.add(new_expenditure)
@@ -86,45 +83,55 @@ def create_expenditure(request: ExpenditureBase, db: Session,
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Error saving your data to the database. Try again later."
+            detail=f"Error saving your data to the database. Try again later.",
         )
 
 
 def user_expenditures(db: Session, current_user_id: int):
-    expenditures = db.query(Expenditure).filter(Expenditure.user_id ==
-                                                current_user_id).all()
+    expenditures = (
+        db.query(Expenditure)
+        .filter(Expenditure.user_id == current_user_id)
+        .order_by(Expenditure.time_stamp.desc())
+        .all()
+    )
 
     return expenditures
 
 
 def delete_expenditure(expend_id: int, db: Session, current_user_id: int):
-    expenditure = db.query(Expenditure).filter(Expenditure.id ==
-                                               expend_id).first()
+    expenditure = db.query(Expenditure).filter(Expenditure.id == expend_id).first()
     if expenditure:
         if expenditure.user_id == current_user_id:
             db.delete(expenditure)
             db.commit()
         else:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
-                                detail='You can only delete your expenditures.')
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="You can only delete your expenditures.",
+            )
     else:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail=f'No expenditure with id {expend_id}.')
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No expenditure with id {expend_id}.",
+        )
 
 
-def edit_expenditure(request: ExpenditureBase, expend_id: int,
-                     db: Session, current_user_id: int):
-    expenditure = db.query(Expenditure).filter(Expenditure.id ==
-                                               expend_id).first()
+def edit_expenditure(
+    request: ExpenditureBase, expend_id: int, db: Session, current_user_id: int
+):
+    expenditure = db.query(Expenditure).filter(Expenditure.id == expend_id).first()
 
     if not expenditure:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail=f'No expenditure with id {expend_id}.')
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=f"No expenditure with id {expend_id}.",
+        )
 
     if not expenditure.user_id == current_user_id:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
-                            detail=f'You are not authorized to edit this '
-                                   f'expenditure.')
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=f"You are not authorized to edit this " f"expenditure.",
+        )
 
     money_type, paid_on = correct_expenditure(request)
 
@@ -142,44 +149,46 @@ def edit_expenditure(request: ExpenditureBase, expend_id: int,
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Error saving your data to the database. Try again later."
+            detail=f"Error saving your data to the database. Try again later.",
         )
 
 
 def expenditures_to_pdf(db: Session, current_user_id: int, response: Response):
-    expenditures = db.query(Expenditure).filter(Expenditure.user_id ==
-                                                current_user_id).all()
+    expenditures = (
+        db.query(Expenditure).filter(Expenditure.user_id == current_user_id).all()
+    )
 
     user = db.query(User).filter(User.id == current_user_id).first()
 
     list_of_expenditures = [
         {
-            'money type': expenditure.money_type,
-            'amount': expenditure.amount,
-            'paid on': expenditure.paid_on,
-            'description': expenditure.description,
-            'time created': expenditure.time_stamp
+            "money type": expenditure.money_type,
+            "amount": expenditure.amount,
+            "paid on": expenditure.paid_on,
+            "description": expenditure.description,
+            "time created": expenditure.time_stamp,
         }
         for expenditure in expenditures
     ]
 
     if not list_of_expenditures:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail='You have no expenses, create on to get '
-                                   'statement.')
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="You have no expenses, create on to get " "statement.",
+        )
 
     df = pd.DataFrame(list_of_expenditures)
 
     # creating readable time_stamps
 
-    for index, time_stamp in enumerate(df['time created']):
+    for index, time_stamp in enumerate(df["time created"]):
         time_stamp = str(time_stamp)
-        day, time = time_stamp.split(' ')[0], time_stamp.split(' ')[1][:8]
-        print(f'time stamp: {time_stamp}, day:{day}, time: {time}')
-        df.loc[index, 'time created'] = f'{day} {time}'
+        day, time = time_stamp.split(" ")[0], time_stamp.split(" ")[1][:8]
+        print(f"time stamp: {time_stamp}, day:{day}, time: {time}")
+        df.loc[index, "time created"] = f"{day} {time}"
 
     # create a pdf statement file
-    table = df.to_html(classes='my-style', index=False)
+    table = df.to_html(classes="my-style", index=False)
 
     html_string = f"""
     <html>
@@ -272,4 +281,4 @@ def expenditures_to_pdf(db: Session, current_user_id: int, response: Response):
     # return pdf_buffer.read()
 
     # # saving the file as pdf.
-    HTML(string=html_string).write_pdf(f'{user.username}.pdf')
+    HTML(string=html_string).write_pdf(f"{user.username}.pdf")
