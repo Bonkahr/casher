@@ -9,7 +9,6 @@ class UserBase(BaseModel):
     username: str
     email: EmailStr
     password: str
-    user_image_url: str
     user_type: str
 
 
@@ -23,6 +22,7 @@ class UserEditUserType(BaseModel):
 
 
 class UserDisplay(BaseModel):
+    id: int
     first_name: str
     last_name: str
     user_type: str

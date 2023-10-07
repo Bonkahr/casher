@@ -21,6 +21,7 @@ async def login(request: OAuth2PasswordRequestForm = Depends(),
                                           request_username).first()
     user_email = db.query(User).filter(User.email ==
                                        request.username).first()
+    
     user = user_email if not user_username else user_username
 
     if not user:

@@ -1,4 +1,5 @@
 import datetime
+import os
 
 from sqlalchemy.orm.session import Session
 
@@ -66,7 +67,7 @@ def create_user(request: UserBase, db: Session):
         username=request.username,
         email=request.email.lower(),
         password=bcrypt(request.password),
-        user_image_url=request.user_image_url,
+        user_image_url='',
         user_type=user_type,
         created_on=datetime.datetime.now()
     )
@@ -117,7 +118,13 @@ def delete_user(user_id: int, db: Session, current_user_id: int):
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                                 detail=f"User with id '{user_id}' not found.")
     else:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
+        if user.id == current_user.id:
+            db.delete(user)
+            db.commit()
+            return
+        
+        else:
+            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED,
                             detail='You are not authorized for any deletion, '
                                    'contact Admin.')
 
@@ -166,7 +173,7 @@ def retrieve_user_by_username(username: str, db: Session, current_user_id: int):
     current_user = db.query(User).filter(User.id == current_user_id).first()
 
     if user:
-        if current_user.user_type == 'admin' or current_user.id == user.id:
+        if current_user.id == user.id:
             return user
         else:
             raise HTTPException(

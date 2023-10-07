@@ -16,7 +16,7 @@ class User(Base):
     user_image_url = Column(String)
     user_type = Column(String)
     created_on = Column(DateTime)
-    expenditures = relationship('Expenditure', back_populates='user')
+    expenditures = relationship('Expenditure', back_populates='user', cascade='all, delete, delete-orphan')
 
 
 class Expenditure(Base):

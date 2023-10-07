@@ -1,4 +1,5 @@
 import shutil
+import os
 
 from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.orm.session import Session
@@ -6,13 +7,19 @@ from sqlalchemy.orm.session import Session
 from auth.outh2 import get_current_user
 from database import db_user
 from database.database import get_db
-from schema.schemas import (UserBase, UserDisplay, UserAuth, UserEditUserType,
-                            UserEditPassword)
+from database.models import User
+from schema.schemas import (
+    UserBase,
+    UserDisplay,
+    UserAuth,
+    UserEditUserType,
+    UserEditPassword,
+)
 
-router = APIRouter(prefix='/user', tags=['Users'])
+router = APIRouter(prefix="/user", tags=["Users"])
 
 
-@router.post('/new', response_model=UserDisplay)
+@router.post("/new", response_model=UserDisplay)
 async def create_user(request: UserBase, db: Session = Depends(get_db)):
     """
 
@@ -24,9 +31,10 @@ async def create_user(request: UserBase, db: Session = Depends(get_db)):
     return db_user.create_user(request, db)
 
 
-@router.get('', response_model=list[UserDisplay])
-async def all_users(db: Session = Depends(get_db),
-                    current_user: UserAuth = Depends(get_current_user)):
+@router.get("", response_model=list[UserDisplay])
+async def all_users(
+    db: Session = Depends(get_db), current_user: UserAuth = Depends(get_current_user)
+):
     """
 
     :param current_user:
@@ -36,16 +44,21 @@ async def all_users(db: Session = Depends(get_db),
     return db_user.get_all_users(db, current_user.id)
 
 
-@router.get('/{username}', response_model=UserDisplay)
-async def get_user_username(username: str,
-                            db: Session = Depends(get_db),
-                            current_user: UserAuth = Depends(get_current_user)):
+@router.get("/{username}", response_model=UserDisplay)
+async def get_user_username(
+    username: str,
+    db: Session = Depends(get_db),
+    current_user: UserAuth = Depends(get_current_user),
+):
     return db_user.retrieve_user_by_username(username, db, current_user.id)
 
 
-@router.delete('/{user_id}')
-async def delete_user(user_id: int, db: Session = Depends(get_db),
-                      current_user: UserAuth = Depends(get_current_user)):
+@router.delete("/{user_id}")
+async def delete_user(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: UserAuth = Depends(get_current_user),
+):
     """
 
     :param current_user:
@@ -56,29 +69,41 @@ async def delete_user(user_id: int, db: Session = Depends(get_db),
     return db_user.delete_user(user_id, db, current_user.id)
 
 
-@router.put('/edit_user/{username}', response_model=UserDisplay)
-async def edit_user_type(request: UserEditUserType, username: str,
-                         db: Session = Depends(get_db),
-                         current_user: UserAuth = Depends(get_current_user)):
+@router.put("/edit_user/{username}", response_model=UserDisplay)
+async def edit_user_type(
+    request: UserEditUserType,
+    username: str,
+    db: Session = Depends(get_db),
+    current_user: UserAuth = Depends(get_current_user),
+):
     return db_user.edit_user_type(request, username, db, current_user.id)
 
 
-@router.put('/edit_password/{username}', response_model=UserDisplay)
-async def change_password(request: UserEditPassword, username: str,
-                          db: Session = Depends(get_db),
-                          current_user: UserAuth = Depends(get_current_user)):
+@router.put("/edit_password/{username}", response_model=UserDisplay)
+async def change_password(
+    request: UserEditPassword,
+    username: str,
+    db: Session = Depends(get_db),
+    current_user: UserAuth = Depends(get_current_user),
+):
     return db_user.edit_user_password(request, username, db, current_user.id)
 
 
-@router.put('/reset_password/{username}', response_model=UserDisplay)
-async def reset_password(username: str, db: Session = Depends(get_db),
-                         current_user: UserAuth = Depends(get_current_user)):
+@router.put("/reset_password/{username}", response_model=UserDisplay)
+async def reset_password(
+    username: str,
+    db: Session = Depends(get_db),
+    current_user: UserAuth = Depends(get_current_user),
+):
     return db_user.reset_password(username, db, current_user.id)
 
 
-@router.post('/image')
-async def upload_image(image: UploadFile = File(...)):#,
-                      # current_user: UserAuth = Depends(get_current_user)):
+@router.post("/image")
+async def upload_image(
+    image: UploadFile = File(...),
+    db: Session = Depends(get_db),
+    current_user: UserAuth = Depends(get_current_user),
+):
     """Uploads an image to the server
 
     Args:
@@ -96,19 +121,43 @@ async def upload_image(image: UploadFile = File(...)):#,
         :param current_user:
     """
 
-    image_file_type = image.filename.rsplit('.', 1)[1]
-    allowed_image_types = {"jpg", "png", "jpeg", "webm", "gif"}
+    user = db.query(User).filter(User.id == current_user.id).first()
+
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="You must log in to upload an image.",
+        )
+
+    image_file_type = image.filename.rsplit(".", 1)[1]
+
+    allowed_image_types = {"jpg", "png", "jpeg", "webm", "gif", "svg"}
 
     if image_file_type not in allowed_image_types:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
-                            detail=f'Image format not supported, supported '
-                                   f'formats are {", ".join(allowed_image_types)}.')
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Image format not supported, supported "
+            f'formats are {", ".join(allowed_image_types)}.',
+        )
 
-    filename = image.filename.rsplit('.', 1)
+    filename = image.filename.rsplit(".", 1)
 
-    path = f'images/{filename[0]}.{filename[-1]}'
+    images = os.listdir(path='images')
 
-    with open(path, 'w+b') as buffer:
+    for pic in images:
+        pic_name = pic.rsplit(".", 1)[0]
+        if pic_name == user.username:
+            os.remove(f'images/{pic}')
+    
+    path = f"images/{user.username}.{filename[-1]}"
+
+    with open(path, "w+b") as buffer:
         shutil.copyfileobj(image.file, buffer)
+    
+    try:
+        user.user_image_url = f'{path}'
+        db.commit()
+    except Exception as e:
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail='Error in Server, try again later.')
 
-    return {'file_name': path}
+    return {"file_name": path}

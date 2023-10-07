@@ -17,9 +17,9 @@ router = APIRouter(prefix="/expenditure", tags=["Expenditures"])
 
 @router.post("", response_model=ExpenditureDisplay)
 async def create_expenditure(
-    request: ExpenditureBase,
-    db: Session = Depends(get_db),
-    current_user: UserAuth = Depends(get_current_user),
+        request: ExpenditureBase,
+        db: Session = Depends(get_db),
+        current_user: UserAuth = Depends(get_current_user),
 ):
     """
 
@@ -33,7 +33,7 @@ async def create_expenditure(
 
 @router.get("", response_model=list[ExpenditureDisplay])
 async def user_expenditures(
-    db: Session = Depends(get_db), current_user: UserAuth = Depends(get_current_user)
+        db: Session = Depends(get_db), current_user: UserAuth = Depends(get_current_user)
 ):
     """
 
@@ -43,10 +43,10 @@ async def user_expenditures(
     """
     return db_expenditure.user_expenditures(db, current_user.id)
 
+
 @router.get('/transactions')
 async def transactions(
-    db: Session = Depends(get_db), current_user: UserAuth = Depends(get_current_user)):
-
+        db: Session = Depends(get_db), current_user: UserAuth = Depends(get_current_user)):
     expenditures = db.query(Expenditure).filter(Expenditure.user_id == current_user.id).all()
 
     credits = []
@@ -57,7 +57,7 @@ async def transactions(
             credits.append(expend.amount)
         else:
             expenses.append(expend.amount)
-    
+
     transactions = TransactionBase(
         total_credits=sum(credits),
         total_expenses=sum(expenses),
@@ -65,14 +65,13 @@ async def transactions(
         money_at_hand=sum(credits) - sum(expenses)
     )
     return transactions
-    
 
 
 @router.delete("/delete/{expend_id}")
 async def delete_expenditure(
-    expend_id: int,
-    db: Session = Depends(get_db),
-    current_user: UserAuth = Depends(get_current_user),
+        expend_id: int,
+        db: Session = Depends(get_db),
+        current_user: UserAuth = Depends(get_current_user),
 ):
     """
 
@@ -87,10 +86,10 @@ async def delete_expenditure(
 
 @router.put("/edit/{expend_id}")
 async def edit_expenditure(
-    request: ExpenditureBase,
-    expend_id: int,
-    db: Session = Depends(get_db),
-    current_user: UserAuth = Depends(get_current_user),
+        request: ExpenditureBase,
+        expend_id: int,
+        db: Session = Depends(get_db),
+        current_user: UserAuth = Depends(get_current_user),
 ):
     """
 
@@ -106,8 +105,8 @@ async def edit_expenditure(
 
 @router.get("/statement")
 async def get_statement(
-    response: Response,
-    db: Session = Depends(get_db),
-    current_user: UserAuth = Depends(get_current_user),
+        response: Response,
+        db: Session = Depends(get_db),
+        current_user: UserAuth = Depends(get_current_user),
 ):
     return db_expenditure.expenditures_to_pdf(db, current_user.id, response)

@@ -22,11 +22,19 @@ def correct_expenditure(request: ExpenditureBase):
         )
     money_type = request.money_type.lower()
 
-    paid_on = request.paid_on.split("-")
+    paid_on_separator = set([x for x in request.paid_on if not x.isalnum()])
+
+    if len(paid_on_separator) != 1:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Invalid dates."
+        )
+
+    paid_on = request.paid_on.split(list(paid_on_separator)[0])
+
     if len(paid_on) != 3:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Enter the date as YYYY-MM-DD.",
+            detail="Enter the date as DD-MM-YYYY.",
         )
 
     for d in paid_on:
@@ -37,21 +45,22 @@ def correct_expenditure(request: ExpenditureBase):
                 status_code=status.HTTP_403_FORBIDDEN, detail="Invalid dates."
             )
 
-    if 2022 > int(paid_on[0]) > 2023:
+    if int(paid_on[0]) > 31 or int(paid_on[0]) < 1:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail=f"Invalid calendar year."
+            status_code=status.HTTP_403_FORBIDDEN, detail=f"Invalid data of the month."
         )
-    if 1 > int(paid_on[1]) > 12:
+
+    if int(paid_on[1]) < 1 or int(paid_on[1]) > 12:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail=f"Invalid calendar Month."
         )
 
-    if 1 > int(paid_on[2]) > 31:
+    if int(paid_on[2]) > 2023 or int(paid_on[2]) < 2022:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN, detail=f"Invalid calendar Month."
         )
 
-    paid_on = f"{paid_on[0]}-{paid_on[1]}-{paid_on[2]}"
+    paid_on = f"{paid_on[2]}-{paid_on[1]}-{paid_on[0]}"
 
     return money_type, paid_on
 
@@ -68,12 +77,12 @@ def create_expenditure(request: ExpenditureBase, db: Session, current_user_id: i
         time_stamp=datetime.datetime.now(),
     )
 
-    print(
-        f"money_type{new_expenditure.money_type}, amount: "
-        f"{new_expenditure.amount}, paid_on {new_expenditure.paid_on}, "
-        f"descr{new_expenditure.description}, user_id"
-        f"{new_expenditure.user_id}, time_st{new_expenditure.time_stamp}"
-    )
+    # print(
+    #     f"money_type{new_expenditure.money_type}, amount: "
+    #     f"{new_expenditure.amount}, paid_on {new_expenditure.paid_on}, "
+    #     f"descr{new_expenditure.description}, user_id"
+    #     f"{new_expenditure.user_id}, time_st{new_expenditure.time_stamp}"
+    # )
 
     try:
         db.add(new_expenditure)
@@ -117,7 +126,7 @@ def delete_expenditure(expend_id: int, db: Session, current_user_id: int):
 
 
 def edit_expenditure(
-    request: ExpenditureBase, expend_id: int, db: Session, current_user_id: int
+        request: ExpenditureBase, expend_id: int, db: Session, current_user_id: int
 ):
     expenditure = db.query(Expenditure).filter(Expenditure.id == expend_id).first()
 
