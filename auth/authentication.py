@@ -40,4 +40,6 @@ async def login(request: OAuth2PasswordRequestForm = Depends(),
         'name': f'{user.first_name} {user.last_name}',
         'username': user.username,
         'user_type': user.user_type,
+        'user_image_url': user.user_image_url,
+        'created_on': user.created_on
     }
