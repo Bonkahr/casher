@@ -1,4 +1,6 @@
 from fastapi import APIRouter, Depends, Response
+from fastapi.responses import FileResponse
+
 from sqlalchemy.orm.session import Session
 
 from database.models import Expenditure
@@ -47,23 +49,16 @@ async def user_expenditures(
 @router.get('/transactions')
 async def transactions(
         db: Session = Depends(get_db), current_user: UserAuth = Depends(get_current_user)):
-    expenditures = db.query(Expenditure).filter(Expenditure.user_id == current_user.id).all()
-
-    credits = []
-    expenses = []
-
-    for expend in expenditures:
-        if expend.money_type == 'credit':
-            credits.append(expend.amount)
-        else:
-            expenses.append(expend.amount)
+        
+    total_credits, total_expenses, total_transaction, money_at_hand = db_expenditure.total_transactions(db, current_user.id)
 
     transactions = TransactionBase(
-        total_credits=sum(credits),
-        total_expenses=sum(expenses),
-        total_transaction=sum(credits) + sum(expenses),
-        money_at_hand=sum(credits) - sum(expenses)
+        total_credits=total_credits,
+        total_expenses=total_expenses,
+        total_transaction=total_transaction,
+        money_at_hand=money_at_hand
     )
+
     return transactions
 
 
@@ -109,4 +104,8 @@ async def get_statement(
         db: Session = Depends(get_db),
         current_user: UserAuth = Depends(get_current_user),
 ):
-    return db_expenditure.expenditures_to_pdf(db, current_user.id, response)
+    db_expenditure.expenditures_to_pdf(db, current_user.id, response)
+    file_path = f'statements/{current_user.username}.pdf'
+    file_name = f'{current_user.username}.pdf'
+
+    return FileResponse(file_path, headers={'Content-disposition': f'attachment; filename={file_name}'})

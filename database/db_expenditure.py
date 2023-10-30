@@ -1,6 +1,7 @@
+import os
+
 import pandas as pd
 from weasyprint import HTML
-from io import BytesIO
 
 import datetime
 
@@ -126,7 +127,7 @@ def delete_expenditure(expend_id: int, db: Session, current_user_id: int):
 
 
 def edit_expenditure(
-        request: ExpenditureBase, expend_id: int, db: Session, current_user_id: int
+    request: ExpenditureBase, expend_id: int, db: Session, current_user_id: int
 ):
     expenditure = db.query(Expenditure).filter(Expenditure.id == expend_id).first()
 
@@ -162,20 +163,45 @@ def edit_expenditure(
         )
 
 
-def expenditures_to_pdf(db: Session, current_user_id: int, response: Response):
+def total_transactions(db: Session, current_user_id: int):
     expenditures = (
         db.query(Expenditure).filter(Expenditure.user_id == current_user_id).all()
+    )
+
+    credits = []
+    expenses = []
+
+    for expend in expenditures:
+        if expend.money_type == "credit":
+            credits.append(expend.amount)
+        else:
+            expenses.append(expend.amount)
+
+    total_credits = sum(credits)
+    total_expenses = sum(expenses)
+    total_transaction = sum(credits) + sum(expenses)
+    money_at_hand = sum(credits) - sum(expenses)
+
+    return (total_credits, total_expenses, total_transaction, money_at_hand)
+
+
+def expenditures_to_pdf(db: Session, current_user_id: int, response: Response):
+    expenditures = (
+        db.query(Expenditure)
+        .filter(Expenditure.user_id == current_user_id)
+        .order_by(Expenditure.time_stamp.desc())
+        .all()
     )
 
     user = db.query(User).filter(User.id == current_user_id).first()
 
     list_of_expenditures = [
         {
-            "money type": expenditure.money_type,
-            "amount": expenditure.amount,
-            "paid on": expenditure.paid_on,
-            "description": expenditure.description,
-            "time created": expenditure.time_stamp,
+            "Money Type": expenditure.money_type,
+            "Amount": expenditure.amount,
+            "Paid On": expenditure.paid_on,
+            "Description": expenditure.description,
+            "Time Created": expenditure.time_stamp,
         }
         for expenditure in expenditures
     ]
@@ -183,21 +209,27 @@ def expenditures_to_pdf(db: Session, current_user_id: int, response: Response):
     if not list_of_expenditures:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="You have no expenses, create on to get " "statement.",
+            detail="You have no expenses, create an expenditure to get statement.",
         )
 
     df = pd.DataFrame(list_of_expenditures)
 
     # creating readable time_stamps
 
-    for index, time_stamp in enumerate(df["time created"]):
+    for index, time_stamp in enumerate(df["Time Created"]):
         time_stamp = str(time_stamp)
         day, time = time_stamp.split(" ")[0], time_stamp.split(" ")[1][:8]
-        print(f"time stamp: {time_stamp}, day:{day}, time: {time}")
-        df.loc[index, "time created"] = f"{day} {time}"
+        df.loc[index, "Time Created"] = f"{day} {time}"
 
     # create a pdf statement file
     table = df.to_html(classes="my-style", index=False)
+
+    (
+        total_credits,
+        total_expenses,
+        total_transaction,
+        money_at_hand,
+    ) = total_transactions(db, current_user_id)
 
     html_string = f"""
     <html>
@@ -232,9 +264,14 @@ def expenditures_to_pdf(db: Session, current_user_id: int, response: Response):
             margin-bottom: 4px;
             text-align: center;
         }}
+
+        .table {{
+            margin: auto;
+            text-align: center; 
+        }}
         
         .summary {{
-            text-align: center;   
+            text-align: left;   
         }}
         
         .credit {{
@@ -248,46 +285,31 @@ def expenditures_to_pdf(db: Session, current_user_id: int, response: Response):
         .total {{
             color: #55E329;
         }}
-      
+
       </style>
-        <title>HTML Pandas Dataframe with CSS</title>
+        <title>{user.username} Casher app expenditure statement</title>
         <link rel="stylesheet" type="text/css" href="style.css"/>
       </head>
       <body>
       <div class="heading">
         <h3>Transaction statement for {user.first_name} {user.last_name}</h3>
       </div>
+      <div class="table">
         {table}
-        <div class="summary">
-            <h4>Total credit: <span class="credit"></span> </h4>
-            <h4>Total Expenses: <span class="expenses"></span> </h4>
-            <h4>Total Amount: <span class="total"></span> </h4>
-        </div>
-        
+      </div>
+      <div class="summary">
+        <h4>Total credit      : <span class="credit">{format(total_credits, '.2f')}</span></h4>
+        <h4>Total Expenses    : <span class="expenses">{format(total_expenses, '.2f')}</span></h4>
+        <h4>Total Transactions: <span class="total">{format(total_transaction, '.2f')}</span></h4>
+        <h4>Money at hand     : <span class="total">{format(money_at_hand, '.2f')}</span></h4>
+      </div>        
       </body>
     </html>
     """
-    # TODO: Create the functionality to download the file to users computer
-    #  instead of saving it in the server.
-    #  The commented code below results to an error about UTF-8 formatting.
+    statement_files = os.listdir('statements')
 
-    # storing the pdf as BytesIO object
-    # pdf_buffer = BytesIO()
-    # HTML(string=html_string).write_pdf(pdf_buffer)
-
-    # # Setting the Content-Disposition header
-    # # to prompt the user to download the file.
-    # response.headers["Content-Disposition"] = f"attachment: filename" \
-    #                                           f"={user.username}.pdf"
-    #
-    # # Setting the Content-Type header to indicate that it's a PDF file
-    # response.headers["Content-Type"] = "application/pdf"
-    #
-    # # Seeking to the beginning of the BytesIO buffer
-    # pdf_buffer.seek(0)
-    #
-    # # Return the PDF as a downloadable file
-    # return pdf_buffer.read()
-
-    # # saving the file as pdf.
-    HTML(string=html_string).write_pdf(f"{user.username}.pdf")
+    for file in statement_files:
+        if file == f'{user.username}.pdf':
+            os.remove(f'statements/{file}')
+    
+    HTML(string=html_string).write_pdf(f"statements/{user.username}.pdf")
