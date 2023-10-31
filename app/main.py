@@ -4,7 +4,7 @@ from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
 from .database import models
-from database.database import engine
+from .database.database import engine
 from routers import user_route, expenditure
 from auth import authentication
 

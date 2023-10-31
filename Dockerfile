@@ -8,9 +8,6 @@ RUN pip install --no-cache-dir --upgrade -r /casher/requirements.txt
 
 COPY ./app /casher/app
 
-# Add missing dependency
-RUN pip install --no-cache-dir database
-
 EXPOSE 8000
 
 CMD ["uvicorn", "app.main:app", "--proxy-headers", "--host", "0.0.0.0", "--port", "8000"]
