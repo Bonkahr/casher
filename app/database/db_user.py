@@ -173,7 +173,7 @@ def retrieve_user_by_username(username: str, db: Session, current_user_id: int):
     current_user = db.query(User).filter(User.id == current_user_id).first()
 
     if user:
-        if current_user.id == user.id:
+        if current_user.id == user.id or current_user.user_type == 'admin':
             return user
         else:
             raise HTTPException(
@@ -289,6 +289,10 @@ def reset_password(username: str, db: Session,
             db.add(user)
             db.commit()
             db.refresh(user)
+
+            #TODO Create functionality to send email to inform the user his/her 
+            # password has been reset to default password 'casher'.
+
             return user
         else:
             raise HTTPException(
