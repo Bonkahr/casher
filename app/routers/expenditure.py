@@ -3,7 +3,6 @@ from fastapi.responses import FileResponse
 
 from sqlalchemy.orm.session import Session
 
-from database.models import Expenditure
 from auth.outh2 import get_current_user
 from database import db_expenditure
 from database.database import get_db

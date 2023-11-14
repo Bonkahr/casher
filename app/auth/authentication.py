@@ -2,8 +2,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security.oauth2 import OAuth2PasswordRequestForm
 
 from sqlalchemy.orm.session import Session
-from auth.outh2 import create_access_token
 
+from auth.outh2 import create_access_token
 from database.database import get_db
 from database.models import User
 from database.hashing import verify
@@ -26,7 +26,7 @@ async def login(request: OAuth2PasswordRequestForm = Depends(),
 
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
-                            detail='Invalid username.')
+                            detail='Invalid Username or Email.')
 
     if not verify(user.password, request.password):
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN,

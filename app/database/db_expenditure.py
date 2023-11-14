@@ -23,6 +23,12 @@ def correct_expenditure(request: ExpenditureBase):
         )
     money_type = request.money_type.lower()
 
+    if request.amount < 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f'Was {request.amount} a loan? Record it as credit with a description of loan.'
+        )
+
     paid_on_separator = set([x for x in request.paid_on if not x.isalnum()])
 
     if len(paid_on_separator) != 1:
@@ -48,17 +54,17 @@ def correct_expenditure(request: ExpenditureBase):
 
     if int(paid_on[0]) > 31 or int(paid_on[0]) < 1:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail=f"Invalid data of the month."
+            status_code=status.HTTP_403_FORBIDDEN, detail=f"Invalid date of the month."
         )
 
     if int(paid_on[1]) < 1 or int(paid_on[1]) > 12:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail=f"Invalid calendar Month."
+            status_code=status.HTTP_403_FORBIDDEN, detail=f"Invalid Month of transaction."
         )
 
     if int(paid_on[2]) > 2023 or int(paid_on[2]) < 2022:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail=f"Invalid calendar Month."
+            status_code=status.HTTP_403_FORBIDDEN, detail=f"Invalid Year."
         )
 
     paid_on = f"{paid_on[2]}-{paid_on[1]}-{paid_on[0]}"
@@ -262,7 +268,7 @@ def expenditures_to_pdf(db: Session, current_user_id: int, response: Response):
         .heading {{
             color: green;
             margin-bottom: 4px;
-            text-align: center;
+            text-align: left;
         }}
 
         .table {{
@@ -286,30 +292,34 @@ def expenditures_to_pdf(db: Session, current_user_id: int, response: Response):
             color: #55E329;
         }}
 
+        .athand {{
+            color: #E419B7;
+        }}
+
       </style>
         <title>{user.username} Casher app expenditure statement</title>
         <link rel="stylesheet" type="text/css" href="style.css"/>
       </head>
       <body>
       <div class="heading">
-        <h3>Transaction statement for {user.first_name} {user.last_name}</h3>
+        <h3><em>Transaction statement for {user.first_name} {user.last_name}</em></h3>
       </div>
       <div class="table">
         {table}
       </div>
       <div class="summary">
-        <h4>Total credit      : <span class="credit">{format(total_credits, '.2f')}</span></h4>
-        <h4>Total Expenses    : <span class="expenses">{format(total_expenses, '.2f')}</span></h4>
-        <h4>Total Transactions: <span class="total">{format(total_transaction, '.2f')}</span></h4>
-        <h4>Money at hand     : <span class="total">{format(money_at_hand, '.2f')}</span></h4>
+        <h6>Total credit      : <span class="credit">{format(total_credits, '.2f')}</span></h6>
+        <h6>Total Expenses    : <span class="expenses">{format(total_expenses, '.2f')}</span></h6>
+        <h6>Total Transactions: <span class="total">{format(total_transaction, '.2f')}</span></h6>
+        <h6>Money at hand     : <span class="athand">{format(money_at_hand, '.2f')}</span></h6>
       </div>        
       </body>
     </html>
     """
-    statement_files = os.listdir('statements')
+    statement_files = os.listdir("statements")
 
     for file in statement_files:
-        if file == f'{user.username}.pdf':
-            os.remove(f'statements/{file}')
-    
+        if file == f"{user.username}.pdf":
+            os.remove(f"statements/{file}")
+
     HTML(string=html_string).write_pdf(f"statements/{user.username}.pdf")

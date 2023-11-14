@@ -31,8 +31,8 @@ class UserDisplay(BaseModel):
     created_on: datetime
 
     class Config:
-        orm_mode = True
-        # from_attributes = True
+        # orm_mode = True
+        from_attributes = True
 
 
 class ExpenditureBase(BaseModel):
@@ -51,8 +51,8 @@ class ExpenditureDisplay(BaseModel):
     time_stamp: datetime
 
     class Config:
-        # from_attributes = True
-        orm_mode = True
+        from_attributes = True
+        # orm_mode = True
 
 
 class TransactionBase(BaseModel):
@@ -67,3 +67,40 @@ class UserAuth(BaseModel):
     id: int
     username: str
     email: EmailStr
+
+
+class SaleBase(BaseModel):
+    item: str
+    bought_amount: int
+    sell_amount: int
+    mode_of_payment: str
+    transaction_code: str
+    balance: int
+    description: str
+    sold_on: str
+
+class SaleDisplay(BaseModel):
+    id: int
+    item: str
+    bought_amount: int
+    sell_amount: int
+    mode_of_payment: str
+    transaction_code: str
+    balance: int
+    profit: int
+    description: str
+    sold_on: str
+    user_id: int
+    created_on: datetime
+    user: UserAuth
+
+    class Config:
+        from_attributes = True
+
+class SalesTransactionDisplay(BaseModel):
+    total_sales: int
+    total_profits: int
+    total_debpts: int
+    percentage_profit: float
+
+

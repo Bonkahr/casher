@@ -60,6 +60,14 @@ def create_user(request: UserBase, db: Session):
         user_type = request.user_type.lower()
     else:
         user_type = 'user'
+    
+    
+    email = request.email
+    if '@' not in email:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail='Incorrect email address.'
+        )
 
     new_user = User(
         first_name=request.first_name.capitalize(),

@@ -3,9 +3,9 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 import uvicorn
 
-from .database import models
-from .database.database import engine
-from routers import user_route, expenditure
+from database import models
+from database.database import engine
+from routers import user_route, expenditure, sales
 from auth import authentication
 
 
@@ -27,8 +27,10 @@ models.Base.metadata.create_all(engine)
 app.include_router(authentication.router)
 app.include_router(user_route.router)
 app.include_router(expenditure.router)
+app.include_router(sales.router)
+
 app.mount("/images", StaticFiles(directory="images"), name="images")
 
 
-if __name__ == "main":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+# if __name__ == "main":
+#     uvicorn.run(app, host="0.0.0.0", port=8000)

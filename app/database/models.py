@@ -17,6 +17,7 @@ class User(Base):
     user_type = Column(String)
     created_on = Column(DateTime)
     expenditures = relationship('Expenditure', back_populates='user', cascade='all, delete, delete-orphan')
+    sales = relationship('Sale', back_populates='user', cascade='all, delete, delete-orphan' )
 
 
 class Expenditure(Base):
@@ -30,3 +31,21 @@ class Expenditure(Base):
     user_id = Column(Integer, ForeignKey('user.id'))
     user = relationship('User', back_populates='expenditures')
     time_stamp = Column(DateTime)
+
+
+class Sale(Base):
+    __tablename__ = 'sale'
+
+    id = Column(Integer, index=True, primary_key=True)
+    item = Column(String)
+    bought_amount = Column(Integer)
+    sell_amount = Column(Integer)
+    mode_of_payment = Column(String)
+    transaction_code = Column(String)
+    balance = Column(Integer)
+    profit = Column(Integer)
+    description = Column(String)
+    sold_on = Column(String)
+    created_on = Column(DateTime)
+    user_id = Column(Integer, ForeignKey('user.id'))
+    user = relationship('User', back_populates='sales')
