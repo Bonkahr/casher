@@ -62,7 +62,6 @@ class TransactionBase(BaseModel):
     money_at_hand: float
 
 
-
 class UserAuth(BaseModel):
     id: int
     username: str
@@ -78,6 +77,7 @@ class SaleBase(BaseModel):
     balance: int
     description: str
     sold_on: str
+
 
 class SaleDisplay(BaseModel):
     id: int
@@ -97,6 +97,7 @@ class SaleDisplay(BaseModel):
     class Config:
         from_attributes = True
 
+
 class SalesTransactionDisplay(BaseModel):
     total_sales: int
     total_profits: int
@@ -104,3 +105,20 @@ class SalesTransactionDisplay(BaseModel):
     percentage_profit: float
 
 
+class TransactionHistoryDisplay(BaseModel):
+    today_sales: int
+    today_profits: int
+    today_debpts: int
+    today_perc_profit: float
+    weekly_sales: int
+    weekly_profits: int
+    weekly_debpts: int
+    weekly_perc_profit: float
+    monthly_sales: int
+    monthly_profits: int
+    monthly_debpts: int
+    monthly_perc_profit: float
+    all_sales: int
+    all_profits: int
+    all_debpts: int
+    all_perc_profit: float
