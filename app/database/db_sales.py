@@ -116,7 +116,7 @@ def daily_sales(date: str, db: Session, current_user_id: int):
         db.query(Sale)
         .filter(Sale.user_id == current_user_id)
         .filter(Sale.sold_on == date)
-        .order_by(Sale.created_on.desc())
+        .order_by(Sale.sold_on.desc())
         .all()
     )
     return sales
@@ -138,13 +138,12 @@ def generic_transaction_func(sales):
     total_daily_sales = sum(all_sales)
     total_daily_profit = sum(all_profit)
     total_debpt = sum(on_debpt)
-    
+
     try:
         percentage_profit = (total_daily_profit / total_buy_price) * 100
+        return (total_daily_sales, total_daily_profit, total_debpt, percentage_profit)
     except Exception as e:
         return 0, 0, 0, 0
-
-    return (total_daily_sales, total_daily_profit, total_debpt, percentage_profit)
 
 
 def daily_transaction(date: str, db: Session, current_user_id: int):
@@ -157,7 +156,10 @@ def daily_transaction(date: str, db: Session, current_user_id: int):
 
     if sales:
         return generic_transaction_func(sales)
-    return 0, 0, 0, 0
+    raise HTTPException(
+        status_code=status.HTTP_404_NOT_FOUND,
+        detail=f"You have no transactions on date {date}.",
+    )
 
 
 def generic_duration_func(
@@ -180,8 +182,8 @@ def generic_duration_func(
 
 def transaction_history(db: Session, current_user_id: int):
     today = datetime.datetime.today()
-    
-    date = f'{today.year}-{today.month}-{today.day}'
+
+    date = f"{today.year}-{today.month}-{today.day}"
     today_sale = generic_duration_func(db, current_user_id, date, date)
     today_sales = generic_transaction_func(today_sale)
 
