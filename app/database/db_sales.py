@@ -9,27 +9,46 @@ from schema.schemas import SaleBase
 
 
 def correct_sale(request: SaleBase):
+    if request.item == "":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN, detail="Kindly select what you sold."
+        )
+
     if request.bought_amount < 0 or request.sell_amount < 0 or request.balance < 0:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Sell and bought amount must be greater than zero.",
+        )
+
+    if request.sell_amount == 0 and request.mode_of_payment != "gift":
+        raise HTTPException(
+            status_code=status.HTTP_402_PAYMENT_REQUIRED,
+            detail=f"I have noticed you sold this {request.item} at 0 price, if it was a gift select `gift` on mode of payment.",
         )
     mode_of_payment = ["cash", "mobile money", "gift"]
 
     if request.mode_of_payment.lower() not in mode_of_payment:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Mode of payment may either be `cash`, `mobile money`, `gift`",
+            detail="Mode of payment may either be `cash`, `mobile money`, `gift`.",
         )
 
-    paid_on_separator = set([x for x in request.sold_on if not x.isalnum()])
-
-    if len(paid_on_separator) != 1:
+    if request.sell_amount == 0 and request.mode_of_payment != "gift":
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Invalid dates."
+            status_code=status.HTTP_402_PAYMENT_REQUIRED,
+            detail=f"I have noticed you sold this {request.item} at 0 price, if it was a gift select `gift` on mode of payment.",
         )
 
-    paid_on = request.sold_on.split(list(paid_on_separator)[0])
+    paid_on_date = request.sold_on.split("T")
+
+    print("**********************************\n\n")
+
+    print(paid_on_date)
+
+    
+    print("**********************************\n\n")
+
+    paid_on = paid_on_date[0].split("-")
 
     if len(paid_on) != 3:
         raise HTTPException(
@@ -37,17 +56,20 @@ def correct_sale(request: SaleBase):
             detail="Enter the date as DD-MM-YYYY.",
         )
 
-    for d in paid_on:
+    paid_on_dates = [paid_on[0], paid_on[1], paid_on[2][:2]]
+
+    for d in paid_on_dates:
         try:
             int(d)
         except Exception as e:
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN, detail="Invalid dates."
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Invalid dates ->  {paid_on_dates}.",
             )
 
-    if int(paid_on[0]) > 31 or int(paid_on[0]) < 1:
+    if int(paid_on[0]) > 2023 or int(paid_on[0]) < 2022:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail=f"Invalid date of the month."
+            status_code=status.HTTP_403_FORBIDDEN, detail=f"Invalid calendar Month."
         )
 
     if int(paid_on[1]) < 1 or int(paid_on[1]) > 12:
@@ -55,12 +77,13 @@ def correct_sale(request: SaleBase):
             status_code=status.HTTP_403_FORBIDDEN, detail=f"Invalid calendar Month."
         )
 
-    if int(paid_on[2]) > 2023 or int(paid_on[2]) < 2022:
+    if int(paid_on[2]) > 31 or int(paid_on[2]) < 1:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail=f"Invalid calendar Month."
+            status_code=status.HTTP_403_FORBIDDEN, detail=f"Invalid date of the month."
         )
 
-    paid_on = f"{paid_on[2]}-{paid_on[1]}-{paid_on[0]}"
+    date_string = f"{paid_on[0]}-{paid_on[1]}-{str(int(paid_on[2]) + 1)}"
+    paid_on = datetime.datetime.strptime(date_string, "%Y-%m-%d").date()
 
     return paid_on
 
@@ -104,7 +127,7 @@ def user_sales(db: Session, current_user_id: int):
     sales = (
         db.query(Sale)
         .filter(Sale.user_id == current_user_id)
-        .order_by(Sale.created_on.desc())
+        .order_by(Sale.sold_on.desc())
         .all()
     )
 

@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, date
 
 from pydantic import BaseModel, EmailStr
 
@@ -89,7 +89,7 @@ class SaleDisplay(BaseModel):
     balance: int
     profit: int
     description: str
-    sold_on: str
+    sold_on: date
     user_id: int
     created_on: datetime
     user: UserAuth

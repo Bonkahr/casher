@@ -26,17 +26,11 @@ def correct_expenditure(request: ExpenditureBase):
     if request.amount < 0:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f'Was {request.amount} a loan? Record it as credit with a description of loan.'
+            detail=f"Was {request.amount} a loan? Record it as credit with a description of loan.",
         )
 
-    paid_on_separator = set([x for x in request.paid_on if not x.isalnum()])
-
-    if len(paid_on_separator) != 1:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail="Invalid dates."
-        )
-
-    paid_on = request.paid_on.split(list(paid_on_separator)[0])
+    paid_on_date = request.paid_on.split("T")
+    paid_on = paid_on_date[0].split("-")
 
     if len(paid_on) != 3:
         raise HTTPException(
@@ -44,30 +38,34 @@ def correct_expenditure(request: ExpenditureBase):
             detail="Enter the date as DD-MM-YYYY.",
         )
 
-    for d in paid_on:
+    paid_on_dates = [paid_on[0], paid_on[1], paid_on[2][:2]]
+
+    for d in paid_on_dates:
         try:
             int(d)
         except Exception as e:
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN, detail="Invalid dates."
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail=f"Invalid dates ->  {paid_on_dates}.",
             )
 
-    if int(paid_on[0]) > 31 or int(paid_on[0]) < 1:
+    if int(paid_on[0]) > 2023 or int(paid_on[0]) < 2022:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail=f"Invalid date of the month."
+            status_code=status.HTTP_403_FORBIDDEN, detail=f"Invalid calendar Month."
         )
 
     if int(paid_on[1]) < 1 or int(paid_on[1]) > 12:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail=f"Invalid Month of transaction."
+            status_code=status.HTTP_403_FORBIDDEN, detail=f"Invalid calendar Month."
         )
 
-    if int(paid_on[2]) > 2023 or int(paid_on[2]) < 2022:
+    if int(paid_on[2]) > 31 or int(paid_on[2]) < 1:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN, detail=f"Invalid Year."
+            status_code=status.HTTP_403_FORBIDDEN, detail=f"Invalid date of the month."
         )
 
-    paid_on = f"{paid_on[2]}-{paid_on[1]}-{paid_on[0]}"
+    date_string = f"{paid_on[0]}-{paid_on[1]}-{paid_on[2]}"
+    paid_on = datetime.datetime.strptime(date_string, "%Y-%m-%d").date()
 
     return money_type, paid_on
 

@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, ForeignKey, String, DateTime, Float
+from sqlalchemy import Column, Integer, ForeignKey, String, DateTime, Float, Date
 from sqlalchemy.orm import relationship
 
 from .database import Base
@@ -45,7 +45,7 @@ class Sale(Base):
     balance = Column(Integer)
     profit = Column(Integer)
     description = Column(String)
-    sold_on = Column(String)
+    sold_on = Column(Date)
     created_on = Column(DateTime)
     user_id = Column(Integer, ForeignKey('user.id'))
     user = relationship('User', back_populates='sales')
